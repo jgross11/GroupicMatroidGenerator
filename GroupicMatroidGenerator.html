@@ -1,0 +1,176 @@
+<html>
+    <title>
+        Groupic Matroid Generator
+    </title>
+
+    <body>
+        <label for="mod">Enter mod</label><br>
+        <input type="number" id = "mod" value = 1 min = 1 step = 1><br>
+
+        <input type="radio" id = "addition" name = "operator"> 
+        <label for="addition">Addition</label><br>
+
+        <input type="radio" id = "multiplication" name = "operator">
+        <label for="multiplication">Multiplication</label><br>
+
+        <input type="radio" id = "MG" name = "independence"> 
+        <label for="MG">Generate M(G)</label><br>
+
+        <input type="radio" id = "M*G" name = "independence">
+        <label for="M*G">Generate M*(G)</label><br>
+
+        <input type="button" id = "generateGroupicMatroid" value="Generate groupic matroid" onclick="generateGroupicMatroid()">
+        
+        <script>
+            
+            
+
+            function generateGroupicMatroid(){
+                let mod = document.getElementById("mod").value;
+                let operator = document.getElementById("addition").checked ? modAddition : document.getElementById("multiplication").checked ? modMultiplication : null;
+                let independence = document.getElementById("MG").checked ? MIndependenceNotion : document.getElementById("M*G").checked ? MStarIndependenceNotion : null;
+                
+                if(isNaN(mod) || operator == null || independence == null){
+                    console.log("bad input");
+                    return;
+                }
+                // lame
+                let e = operator === modAddition ? 0 : 1;
+                let groundSet = [];
+                for(let i = 0; i < mod; i++){
+                    groundSet.push(parseInt(i));
+                }
+                /*
+                        some weird idea of trimming dependent elements, although this is
+                        not easily done with a variable independence notion...
+                
+                let independentElements = [];
+                for(val1 in groundSet){
+                    let independent = true;
+                    for(val2 in groundSet){
+                        if(!independence(val1, val2, mod, e, operator)){
+                            independent = false;
+                            break;
+                        }
+                    }
+                    if(independent){
+                        let dupe = false;
+                        for(val3 in independentElements){
+                            if(val3 == val1){
+                                dupe = true;
+                                break;
+                            }
+                        }
+                        if(!dupe){
+                            console.log(val1);
+                            independentElements.push(val1);
+                        }
+                    }
+                }
+                */
+                let independentCollection = [];
+                independentCollection.push([]);
+                let numberOrderOneElements = (mod - 2 + mod % 2);
+                let maxIndependentCollectionOrder = numberOrderOneElements / 2;
+                for(let groundSetElement in groundSet){
+                    let set = independentCollection[0];
+                    let unionedSet = union(set, groundSetElement);
+                    let newSet = true;
+                    for(let setIndex = 0; setIndex < independentCollection.length; setIndex++){
+                        let testSet = independentCollection[setIndex];
+                        if(setEquality(unionedSet, testSet)){
+                            newSet = false;
+                            break;
+                        }
+                    }
+                    if(newSet){
+                        let setIsIndependent = true;
+                        for(let i = 0; i < unionedSet.length; i++){
+                            let val1 = unionedSet[i];
+                            for(let j = i; j < unionedSet.length; j++){
+                                let val2 = unionedSet[j];
+                                if(!independence(val1, val2, mod, e, operator)){
+                                    setIsIndependent = false;
+                                    break;
+                                }
+                            }
+                            if(!setIsIndependent){
+                                break;
+                            }
+                        }
+                        if(setIsIndependent){
+                            independentCollection.push(unionedSet);
+                        }
+                    }
+                }
+                console.log(independentCollection);
+            }
+
+            function union(set, val){
+                let copy = [];
+                for(let i = 0; i < set.size; i++){
+                    copy.push(set[i]);
+                }
+                for(let x = 0; x < set.size; x++){
+                    let y = set[x];
+                    console.log(y);
+                    if(y == val){
+                        return set;
+                    }
+                }
+                copy.push(parseInt(val));
+                return copy;
+            }
+
+            function setEquality(A, B){
+                console.log("A:");
+                console.log(A);
+                console.log("B:");
+                console.log(B);
+                if(A.length != B.length){
+                    console.log("set equality false, order difference");
+                    return false;
+                }
+                let count = {};
+                for(let index = 0; index < A.length; index++){
+                    count[index] = count[index] != null ? count[index]+A[index]: A[index]; 
+                    count[index] = count[index] != null ? count[index]+B[index]: B[index];  
+                }
+                console.log(count);
+                for(key in Object.keys(count)){
+                    if(count[key] != 2){
+                        console.log("set equality false, subset");
+                        return false;
+                    }
+                }
+                console.log("set equality true");
+                console.log("");
+                return true;
+            }
+
+            function MIndependenceNotion(a, b, mod, identity, op){
+                /*
+                console.log(a);
+                console.log(b);
+                console.log(mod);
+                console.log(identity);
+                */
+                if(a == identity || b == identity) return false;
+                return op(a,b, mod) != identity;
+            }
+
+            function MStarIndependenceNotion(a, b, mod, identity, op){
+                return a != b && op(a,b, mod) != identity;
+            }
+
+            function modAddition(a, b, n){
+                return  (a + b) % n;
+            }
+
+            function modMultiplication(a, b, n){
+                return (a * b) % n;
+            }
+
+        </script>
+    </body>
+</html>
