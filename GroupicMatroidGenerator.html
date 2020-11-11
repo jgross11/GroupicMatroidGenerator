@@ -40,6 +40,22 @@
                 for(let i = 0; i < mod; i++){
                     groundSet.push(parseInt(i));
                 }
+                console.log("ground set before trimming");
+                console.log(groundSet);
+                // eliminate identity and involutions
+                /*
+                for(let i = 0; i < groundSet.length; i++){
+                    let val = groundSet[i];
+                    if(!independence(val, val, mod, e, operator)){
+                        //groundSet.remove(val);
+                        i--;
+                    }
+                };
+                */
+
+                console.log("ground set after trimming");
+                console.log(groundSet);
+
                 /*
                         some weird idea of trimming dependent elements, although this is
                         not easily done with a variable independence notion...
@@ -72,46 +88,95 @@
                 independentCollection.push([]);
                 let numberOrderOneElements = (mod - 2 + mod % 2);
                 let maxIndependentCollectionOrder = numberOrderOneElements / 2;
-                for(let groundSetElement in groundSet){
-                    let set = independentCollection[0];
-                    let unionedSet = union(set, groundSetElement);
-                    let newSet = true;
-                    for(let setIndex = 0; setIndex < independentCollection.length; setIndex++){
-                        let testSet = independentCollection[setIndex];
-                        if(setEquality(unionedSet, testSet)){
-                            newSet = false;
-                            break;
-                        }
-                    }
-                    if(newSet){
-                        let setIsIndependent = true;
-                        for(let i = 0; i < unionedSet.length; i++){
-                            let val1 = unionedSet[i];
-                            for(let j = i; j < unionedSet.length; j++){
-                                let val2 = unionedSet[j];
-                                if(!independence(val1, val2, mod, e, operator)){
-                                    setIsIndependent = false;
-                                    break;
-                                }
-                            }
-                            if(!setIsIndependent){
-                                break;
-                            }
-                        }
-                        if(setIsIndependent){
+                console.log("####");
+                console.log("collection before loop");
+                printCollection(independentCollection);
+                console.log("####");
+                
+                for(let index = 0; index < independentCollection.length; index++){
+                    console.log("####");
+                    console.log("collection at start of loop");
+                    printCollection(independentCollection);
+                    console.log("####");
+                    let set = independentCollection[index];
+                    console.log("#######");
+                    console.log("independent set");
+                    console.log(set);
+                    console.log("#######");
+                    for(let groundSetElement in groundSet){
+                        let unionedSet = union(set, groundSetElement);
+                        //console.log("unioned set:");
+                        //console.log(unionedSet);
+                        if(!setEquality(set, unionedSet) && isSetIndependent(unionedSet, independence, mod, e, operator) 
+                        && !isSetInCollection(unionedSet, independentCollection)){
+                            printCollection(independentCollection);
                             independentCollection.push(unionedSet);
+                            printCollection(independentCollection);
                         }
                     }
                 }
-                console.log(independentCollection);
+                console.log("I = ");
+                printCollection(independentCollection);
+                console.log("|I| = " + independentCollection.length);
+            }  
+
+            function isSetInCollection(set, collection){
+                console.log("checking if");
+                printCollection(collection);
+                console.log("in");
+                printCollection(collection);
+                for(let setIndex = 0; setIndex < collection.length; setIndex++){
+                    let testSet = collection[setIndex];
+                    if(setEquality(set, testSet)){
+                        console.log(set);
+                        console.log("in");
+                        printCollection(collection);
+                        return true;
+                    }
+                }
+                console.log(set);
+                console.log("not in");
+                printCollection(collection);
+                return false;
+            }
+
+            function printCollection(collection){
+                // TODO print all elements of collection for realtime debugging
+                let result = "{";
+                for(let x in collection){
+                    if(collection[x] == ""){
+                        result += "{}, ";
+                    }else{
+                        result += "{"+collection[x]+"}, ";
+                    }
+                }
+                result += "}";
+                console.log(result);
+            }
+
+            function isSetIndependent(set, independenceFunction, mod, identity, operator){
+                //console.log("checking if set is independent");
+                for(let index1 = 0; index1 < set.length; index1++){
+                    let val1 = set[index1];
+                    for(let index2 = index1; index2 < set.length; index2++){
+                        let val2 = set[index2];
+                        if(!independenceFunction(val1, val2, mod, identity, operator)){
+                            console.log(val1 + " " + val2 + " dependent pair");
+                            return false;
+                        }
+                    }
+                }
+                console.log(set);
+                console.log("is independent");
+                return true;
             }
 
             function union(set, val){
                 let copy = [];
-                for(let i = 0; i < set.size; i++){
+                for(let i = 0; i < set.length; i++){
                     copy.push(set[i]);
                 }
-                for(let x = 0; x < set.size; x++){
+                for(let x = 0; x < set.length; x++){
                     let y = set[x];
                     console.log(y);
                     if(y == val){
@@ -123,23 +188,27 @@
             }
 
             function setEquality(A, B){
-                console.log("A:");
+                
+                console.log("checking if set");
                 console.log(A);
-                console.log("B:");
+                console.log("equals");
                 console.log(B);
+                
                 if(A.length != B.length){
                     console.log("set equality false, order difference");
                     return false;
                 }
                 let count = {};
                 for(let index = 0; index < A.length; index++){
-                    count[index] = count[index] != null ? count[index]+A[index]: A[index]; 
-                    count[index] = count[index] != null ? count[index]+B[index]: B[index];  
+                    count[A[index]] = count[A[index]] != null ? count[A[index]]+1 : 1; 
+                    count[B[index]] = count[B[index]] != null ? count[B[index]]+1 : 1;  
+                    console.log(count);
                 }
-                console.log(count);
-                for(key in Object.keys(count)){
-                    if(count[key] != 2){
-                        console.log("set equality false, subset");
+                let keys = Object.keys(count);
+                for(key in keys){
+                    if(count[keys[key]] != 2){
+                        console.log("count[" + keys[key] + "] " + "= " + count[keys[key]]);
+                        console.log("set equality false, same order, different elements");
                         return false;
                     }
                 }
